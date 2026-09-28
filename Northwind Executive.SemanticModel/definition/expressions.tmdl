@@ -1,0 +1,9 @@
+expression Server = "KABUORJNR" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: a8bae381-6b87-4f48-a532-efe64c8aa201
+
+	annotation PBI_ResultType = Text
+
+expression Database = "Northwinds" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 4febaf07-d481-4651-a91a-befa39569a4f
+
+	annotation PBI_ResultType = Text

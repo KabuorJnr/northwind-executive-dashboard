@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Northwind Executive"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "de1d26dd-7997-4ab0-b3c0-e8e58a3a0535"
+  }
+}

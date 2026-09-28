@@ -1,0 +1,52 @@
+table DimEmployee
+	lineageTag: 391fca07-d7b7-47e6-8aa4-e896e6e55cdd
+
+	column EmployeeID
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 3785c20a-cc7d-43fd-8711-9c762fe37c7e
+		summarizeBy: none
+		sourceColumn: EmployeeID
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sales Rep'
+		dataType: string
+		lineageTag: d28805c4-31c6-4d38-8520-6264d0b46584
+		summarizeBy: none
+		sourceColumn: Sales Rep
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Rep Title'
+		dataType: string
+		lineageTag: f9ae8eb8-7c42-4863-a749-5d52f45ad648
+		summarizeBy: none
+		sourceColumn: Rep Title
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Rep Country'
+		dataType: string
+		lineageTag: bf1ee8f1-2a8a-4e9c-9568-a19de3ca3d0c
+		summarizeBy: none
+		sourceColumn: Rep Country
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimEmployee = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Employees = Source{[Schema="dbo",Item="Employees"]}[Data],
+				    Selected = Table.SelectColumns(Employees, {"EmployeeID", "FirstName", "LastName", "Title", "Country"}),
+				    AddName = Table.AddColumn(Selected, "Sales Rep", each [FirstName] & " " & [LastName], type text),
+				    Final = Table.SelectColumns(AddName, {"EmployeeID", "Sales Rep", "Title", "Country"}),
+				    Renamed = Table.RenameColumns(Final, {{"Country", "Rep Country"}, {"Title", "Rep Title"}}),
+				    Typed = Table.TransformColumnTypes(Renamed, {{"EmployeeID", Int64.Type}, {"Rep Title", type text}, {"Rep Country", type text}})
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

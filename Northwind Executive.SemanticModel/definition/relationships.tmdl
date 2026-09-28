@@ -1,0 +1,36 @@
+relationship 03c559fa-0a70-4106-a810-244dd1951048
+	fromColumn: FactSales.OrderDate
+	toColumn: DimDate.Date
+
+relationship cc516189-ac47-439a-b0ef-f1af5a54ae42
+	fromColumn: FactSales.CustomerID
+	toColumn: DimCustomer.CustomerID
+
+relationship 6d57b7e2-a99e-4ee5-950f-e61c43253e14
+	fromColumn: FactSales.ProductID
+	toColumn: DimProduct.ProductID
+
+relationship 21f7e0f0-ffb0-4674-905f-d816ea6f4793
+	fromColumn: FactSales.EmployeeID
+	toColumn: DimEmployee.EmployeeID
+
+relationship 8063df9e-bc36-44ac-b7b9-950defa4f3fa
+	fromColumn: FactSales.ShipVia
+	toColumn: DimShipper.ShipperID
+
+relationship e8feb76b-0ac1-4b5b-ac6a-464db2855bb8
+	fromColumn: FactOrders.OrderDate
+	toColumn: DimDate.Date
+
+relationship f63deb46-2a2d-4bf0-a0b2-ef43d91fac94
+	fromColumn: FactOrders.CustomerID
+	toColumn: DimCustomer.CustomerID
+
+relationship 49668d0c-7ebc-4393-b1fc-07a897e4df33
+	fromColumn: FactOrders.EmployeeID
+	toColumn: DimEmployee.EmployeeID
+
+relationship 13194edf-0a88-429f-b007-4048ae2a138e
+	fromColumn: FactOrders.ShipVia
+	toColumn: DimShipper.ShipperID
+

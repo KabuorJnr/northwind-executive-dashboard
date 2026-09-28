@@ -1,0 +1,34 @@
+table DimShipper
+	lineageTag: 1bae83e9-7ffe-46c5-92e6-dc58250a39d9
+
+	column ShipperID
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 201a75d2-a49c-45f0-ad69-4230dfae9257
+		summarizeBy: none
+		sourceColumn: ShipperID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Shipper
+		dataType: string
+		lineageTag: de85218c-bae2-423f-9acc-3254f893b7cc
+		summarizeBy: none
+		sourceColumn: Shipper
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimShipper = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Shippers = Source{[Schema="dbo",Item="Shippers"]}[Data],
+				    Selected = Table.SelectColumns(Shippers, {"ShipperID", "CompanyName"}),
+				    Renamed = Table.RenameColumns(Selected, {{"CompanyName", "Shipper"}}),
+				    Typed = Table.TransformColumnTypes(Renamed, {{"ShipperID", Int64.Type}, {"Shipper", type text}})
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

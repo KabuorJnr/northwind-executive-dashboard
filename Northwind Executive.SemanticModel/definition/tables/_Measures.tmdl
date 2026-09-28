@@ -1,0 +1,299 @@
+table _Measures
+	lineageTag: 262aca0a-fb99-48b4-a279-3b1ff0cacef8
+
+	/// Net sales after discounts
+	measure 'Revenue' = SUM ( FactSales[NetRevenue] )
+		formatString: \$#,0
+		displayFolder: 1 Sales
+		lineageTag: bf6266a7-9989-4885-937d-b8c6bc71b8d3
+
+	/// Sales at list price before discounts
+	measure 'Gross Sales' = SUM ( FactSales[GrossAmount] )
+		formatString: \$#,0
+		displayFolder: 1 Sales
+		lineageTag: 46b933a3-15b0-4484-9f4f-1ee3660ae6d8
+
+	measure 'Discounts' = SUM ( FactSales[DiscountAmount] )
+		formatString: \$#,0
+		displayFolder: 1 Sales
+		lineageTag: e0b552e9-d9e5-4870-9ee1-335ad63cbf62
+
+	/// Share of gross sales given away as discount
+	measure 'Discount %' = DIVIDE ( [Discounts], [Gross Sales] )
+		formatString: 0.0%
+		displayFolder: 1 Sales
+		lineageTag: af0050fd-313a-4c34-99f8-79ac53789ea9
+
+	measure 'Orders' = DISTINCTCOUNT ( FactSales[OrderID] )
+		formatString: #,0
+		displayFolder: 1 Sales
+		lineageTag: 801a7cde-c05d-4e09-92bd-ee9145ea6912
+
+	measure 'Units Sold' = SUM ( FactSales[Quantity] )
+		formatString: #,0
+		displayFolder: 1 Sales
+		lineageTag: 948ff4de-f908-4478-947c-98dda4059a1b
+
+	measure 'Avg Order Value' = DIVIDE ( [Revenue], [Orders] )
+		formatString: \$#,0.00
+		displayFolder: 1 Sales
+		lineageTag: 4538e367-0653-419c-b905-62ba1ac3bdd3
+
+	/// Customers with at least one order in the period
+	measure 'Active Customers' = DISTINCTCOUNT ( FactSales[CustomerID] )
+		formatString: #,0
+		displayFolder: 1 Sales
+		lineageTag: 160f7525-ed4d-4089-87b9-04d7ee762a7a
+
+	measure 'Revenue per Customer' = DIVIDE ( [Revenue], [Active Customers] )
+		formatString: \$#,0
+		displayFolder: 1 Sales
+		lineageTag: 1c900de4-5a5d-4ea5-bffb-293492b6a01b
+
+	/// Same period last year, capped at the last date with sales so partial years compare fairly
+	measure 'Revenue PY' = CALCULATE ( [Revenue], CALCULATETABLE ( SAMEPERIODLASTYEAR ( DimDate[Date] ), DimDate[DateWithSales] = TRUE () ) )
+		formatString: \$#,0
+		displayFolder: 2 Time Intelligence
+		lineageTag: 51ae5396-c4f8-4155-89f7-bde183e698aa
+
+	measure 'Revenue YoY %' = DIVIDE ( [Revenue] - [Revenue PY], [Revenue PY] )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 2 Time Intelligence
+		lineageTag: 444e266f-134c-45a0-accf-bfbe9a7d289c
+
+	measure 'Orders PY' = CALCULATE ( [Orders], CALCULATETABLE ( SAMEPERIODLASTYEAR ( DimDate[Date] ), DimDate[DateWithSales] = TRUE () ) )
+		formatString: #,0
+		displayFolder: 2 Time Intelligence
+		lineageTag: e24acbe3-bd30-4d35-bcae-4d9cffde0b79
+
+	measure 'Orders YoY %' = DIVIDE ( [Orders] - [Orders PY], [Orders PY] )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 2 Time Intelligence
+		lineageTag: f6525877-8412-4fa1-b250-1c2451320ffd
+
+	measure 'AOV PY' = DIVIDE ( [Revenue PY], [Orders PY] )
+		formatString: \$#,0.00
+		displayFolder: 2 Time Intelligence
+		lineageTag: a747371e-03c4-479e-b174-280b044ce7e2
+
+	measure 'AOV YoY %' = DIVIDE ( [Avg Order Value] - [AOV PY], [AOV PY] )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 2 Time Intelligence
+		lineageTag: cd1c9170-765d-452c-a10b-f7a9a19f4d99
+
+	measure 'Customers PY' = CALCULATE ( [Active Customers], CALCULATETABLE ( SAMEPERIODLASTYEAR ( DimDate[Date] ), DimDate[DateWithSales] = TRUE () ) )
+		formatString: #,0
+		displayFolder: 2 Time Intelligence
+		lineageTag: 5ec495cb-7022-4558-8908-6e834d81c6d2
+
+	measure 'Customers YoY %' = DIVIDE ( [Active Customers] - [Customers PY], [Customers PY] )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 2 Time Intelligence
+		lineageTag: d91b043f-9c34-4513-9fed-2b4f2163dc89
+
+	measure 'Revenue YTD' = TOTALYTD ( [Revenue], DimDate[Date] )
+		formatString: \$#,0
+		displayFolder: 2 Time Intelligence
+		lineageTag: 68619ecb-0756-4967-b959-e59b5658ec14
+
+	/// Rolling three month average revenue
+	measure 'Revenue 3M Avg' =
+			VAR LastVisibleDate = MAX ( DimDate[Date] )
+			VAR Period = DATESINPERIOD ( DimDate[Date], LastVisibleDate, -3, MONTH )
+			RETURN
+			    IF ( NOT ISBLANK ( [Revenue] ), DIVIDE ( CALCULATE ( [Revenue], Period ), 3 ) )
+		formatString: \$#,0
+		displayFolder: 2 Time Intelligence
+		lineageTag: 4a5d1717-8d9c-4a7a-915f-da594d2427a9
+
+	/// Orders counted at header level, used for delivery status
+	measure 'Order Count' = COUNTROWS ( FactOrders )
+		formatString: #,0
+		displayFolder: 3 Fulfilment
+		lineageTag: fd5e443d-8125-4ab2-8a9b-4bda83cebf9f
+
+	measure 'Freight' = SUM ( FactOrders[Freight] )
+		formatString: \$#,0
+		displayFolder: 3 Fulfilment
+		lineageTag: baef5837-b7a0-4461-b972-6f73d853d36c
+
+	measure 'Freight % of Revenue' = DIVIDE ( [Freight], [Revenue] )
+		formatString: 0.0%
+		displayFolder: 3 Fulfilment
+		lineageTag: 8ac48b1b-89c2-44b4-95b7-07563097ab71
+
+	measure 'Shipped Orders' = CALCULATE ( COUNTROWS ( FactOrders ), FactOrders[Delivery Status] <> "Open" )
+		formatString: #,0
+		displayFolder: 3 Fulfilment
+		lineageTag: 8ed72db0-d6d3-4194-adc5-f38b2fd0b2df
+
+	measure 'On-Time Orders' = CALCULATE ( COUNTROWS ( FactOrders ), FactOrders[Delivery Status] = "On time" )
+		formatString: #,0
+		displayFolder: 3 Fulfilment
+		lineageTag: faf578dd-dd83-413e-bab9-86948f06cd12
+
+	measure 'Late Orders' = CALCULATE ( COUNTROWS ( FactOrders ), FactOrders[Delivery Status] = "Late" )
+		formatString: #,0
+		displayFolder: 3 Fulfilment
+		lineageTag: 624b5505-95ee-452b-9c82-7f93ce8495fb
+
+	measure 'Open Orders' = CALCULATE ( COUNTROWS ( FactOrders ), FactOrders[Delivery Status] = "Open" )
+		formatString: #,0
+		displayFolder: 3 Fulfilment
+		lineageTag: cc652517-6885-4044-89f1-205197789652
+
+	/// Shipped on or before the required date, as a share of shipped orders
+	measure 'On-Time %' = DIVIDE ( [On-Time Orders], [Shipped Orders] )
+		formatString: 0.0%
+		displayFolder: 3 Fulfilment
+		lineageTag: 177a005f-6db4-407f-9af6-81ccae6ac3d6
+
+	measure 'On-Time % PY' = CALCULATE ( [On-Time %], CALCULATETABLE ( SAMEPERIODLASTYEAR ( DimDate[Date] ), DimDate[DateWithSales] = TRUE () ) )
+		formatString: 0.0%
+		displayFolder: 3 Fulfilment
+		lineageTag: 2b24c27d-90f6-4260-8833-3d70920e07a0
+
+	/// Change in percentage points versus prior year
+	measure 'On-Time % Change' = IF ( NOT ISBLANK ( [On-Time % PY] ), [On-Time %] - [On-Time % PY] )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 3 Fulfilment
+		lineageTag: 9d265944-395c-441d-a9fe-5419fcf0f9c0
+
+	measure 'Avg Days to Ship' = AVERAGE ( FactOrders[DaysToShip] )
+		formatString: 0.0
+		displayFolder: 3 Fulfilment
+		lineageTag: a17e081b-e02b-4e76-b298-1400a2afd795
+
+	measure 'Avg Days Late' = CALCULATE ( AVERAGE ( FactOrders[DaysLate] ), FactOrders[Delivery Status] = "Late" )
+		formatString: 0.0
+		displayFolder: 3 Fulfilment
+		lineageTag: b49fca65-4d1e-47a9-80cd-f463b46c06db
+
+	/// Row level days late, blank for orders that were on time
+	measure 'Days Late' = IF ( SELECTEDVALUE ( FactOrders[Delivery Status] ) = "Late", MAX ( FactOrders[DaysLate] ) )
+		formatString: 0
+		displayFolder: 3 Fulfilment
+		lineageTag: a23da2aa-fc20-4a19-9313-b44f1358af8d
+
+	measure 'Revenue Share %' = DIVIDE ( [Revenue], CALCULATE ( [Revenue], ALLSELECTED () ) )
+		formatString: 0.0%
+		displayFolder: 4 Analysis
+		lineageTag: 762f16b7-a300-48ad-b92c-9e71c81dba95
+
+	measure 'Customer Rank' = IF ( NOT ISBLANK ( [Revenue] ), RANKX ( ALLSELECTED ( DimCustomer[Customer] ), [Revenue], , DESC, DENSE ) )
+		formatString: 0
+		displayFolder: 4 Analysis
+		lineageTag: bd17a75c-9dda-4759-b253-712810510aae
+
+	measure 'Top 10 Customer Revenue' = IF ( [Customer Rank] <= 10, [Revenue] )
+		formatString: \$#,0
+		displayFolder: 4 Analysis
+		lineageTag: d2d4c239-2d01-461f-bdcc-3a102e3dc761
+
+	measure 'Product Rank' = IF ( NOT ISBLANK ( [Revenue] ), RANKX ( ALLSELECTED ( DimProduct[Product] ), [Revenue], , DESC, DENSE ) )
+		formatString: 0
+		displayFolder: 4 Analysis
+		lineageTag: 29be4b99-3ed2-4127-9eae-1ff00fa5e774
+
+	measure 'Top 10 Product Revenue' = IF ( [Product Rank] <= 10, [Revenue] )
+		formatString: \$#,0
+		displayFolder: 4 Analysis
+		lineageTag: 0f9106d6-9088-44c2-ac3d-ebd76d671d46
+
+	/// Pareto running share of revenue, customers sorted from largest to smallest
+	measure 'Cumulative Revenue %' =
+			VAR CurrentRevenue = [Revenue]
+			VAR AllCustomers =
+			    ADDCOLUMNS ( ALLSELECTED ( DimCustomer[Customer] ), "@Rev", [Revenue] )
+			VAR RunningTotal =
+			    SUMX ( FILTER ( AllCustomers, [@Rev] >= CurrentRevenue ), [@Rev] )
+			RETURN
+			    IF ( NOT ISBLANK ( CurrentRevenue ), DIVIDE ( RunningTotal, SUMX ( AllCustomers, [@Rev] ) ) )
+		formatString: 0.0%
+		displayFolder: 4 Analysis
+		lineageTag: 6a0b2587-ffae-4588-a84f-7f39425a5613
+
+	measure 'Revenue YoY Label' =
+			VAR d = [Revenue YoY %]
+			RETURN
+			    IF ( ISBLANK ( d ), "No prior year data", IF ( d >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( d ), "0.0%" ) & " vs PY" )
+		displayFolder: 5 Labels
+		lineageTag: 0c344a13-972e-4aef-8c2a-fe8517885379
+
+	measure 'Orders YoY Label' =
+			VAR d = [Orders YoY %]
+			RETURN
+			    IF ( ISBLANK ( d ), "No prior year data", IF ( d >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( d ), "0.0%" ) & " vs PY" )
+		displayFolder: 5 Labels
+		lineageTag: 95fb6fdc-4ccf-43e1-b1a3-4426d861633a
+
+	measure 'AOV YoY Label' =
+			VAR d = [AOV YoY %]
+			RETURN
+			    IF ( ISBLANK ( d ), "No prior year data", IF ( d >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( d ), "0.0%" ) & " vs PY" )
+		displayFolder: 5 Labels
+		lineageTag: 82e403cf-5b44-42f1-9e8f-a044ef0a19b7
+
+	measure 'Customers YoY Label' =
+			VAR d = [Customers YoY %]
+			RETURN
+			    IF ( ISBLANK ( d ), "No prior year data", IF ( d >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( d ), "0.0%" ) & " vs PY" )
+		displayFolder: 5 Labels
+		lineageTag: 8e8f9aff-ffeb-4c10-8caa-7ff9dd549560
+
+	measure 'On-Time Change Label' =
+			VAR d = [On-Time % Change]
+			RETURN
+			    IF ( ISBLANK ( d ), "No prior year data", IF ( d >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( d ) * 100, "0.0" ) & " pts vs PY" )
+		displayFolder: 5 Labels
+		lineageTag: 027ba3be-4540-48ab-bf95-b934ed0597dd
+
+	measure 'Revenue YoY Colour' = IF ( ISBLANK ( [Revenue YoY %] ), "#5B6475", IF ( [Revenue YoY %] >= 0, "#067647", "#B42318" ) )
+		displayFolder: 5 Labels
+		lineageTag: 0ad6a699-f8f2-484d-89f6-a823556657a4
+
+	measure 'Orders YoY Colour' = IF ( ISBLANK ( [Orders YoY %] ), "#5B6475", IF ( [Orders YoY %] >= 0, "#067647", "#B42318" ) )
+		displayFolder: 5 Labels
+		lineageTag: 9dd8b744-1973-4df6-84d0-ad8f52385acd
+
+	measure 'AOV YoY Colour' = IF ( ISBLANK ( [AOV YoY %] ), "#5B6475", IF ( [AOV YoY %] >= 0, "#067647", "#B42318" ) )
+		displayFolder: 5 Labels
+		lineageTag: 2958e354-cad3-45c2-a3f8-3a012e75b4fe
+
+	measure 'Customers YoY Colour' = IF ( ISBLANK ( [Customers YoY %] ), "#5B6475", IF ( [Customers YoY %] >= 0, "#067647", "#B42318" ) )
+		displayFolder: 5 Labels
+		lineageTag: a5536db3-fced-4126-8c4c-6b03ab0cc54b
+
+	measure 'On-Time Change Colour' = IF ( ISBLANK ( [On-Time % Change] ), "#5B6475", IF ( [On-Time % Change] >= 0, "#067647", "#B42318" ) )
+		displayFolder: 5 Labels
+		lineageTag: a4556938-0120-408c-af55-42a0d7da74dd
+
+	measure 'Data Through' = "Data through " & FORMAT ( CALCULATE ( MAX ( FactOrders[OrderDate] ), ALL ( FactOrders ) ), "d mmm yyyy" )
+		displayFolder: 5 Labels
+		lineageTag: 1bdb1bf8-702a-45a1-912b-1d8adee14986
+
+	measure 'Selected Period' =
+			VAR y = VALUES ( DimDate[Year] )
+			RETURN
+			    IF ( COUNTROWS ( y ) = 1, "Showing " & FORMAT ( MAX ( DimDate[Year] ), "0" ) & " compared with the same period a year earlier", "Showing all years; pick one year to see growth" )
+		displayFolder: 5 Labels
+		lineageTag: 204b7578-2ddb-4c5f-aefb-f4d86eafc9b8
+
+	column Measure
+		dataType: string
+		isHidden
+		lineageTag: f4820eaf-b396-4e5e-b31d-b66fc95f91f8
+		summarizeBy: none
+		sourceColumn: Measure
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [Measure = text], {})
+				in
+				    Source
+
+	annotation PBI_ResultType = Table

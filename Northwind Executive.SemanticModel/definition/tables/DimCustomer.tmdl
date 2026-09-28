@@ -1,0 +1,51 @@
+table DimCustomer
+	lineageTag: 63895f94-7de7-41b1-bba5-e38d3a84cf84
+
+	column CustomerID
+		dataType: string
+		isHidden
+		lineageTag: b2dfa67a-c54a-490e-bc36-126e1ec52929
+		summarizeBy: none
+		sourceColumn: CustomerID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Customer
+		dataType: string
+		lineageTag: c57802ef-c2d6-4675-bced-51c7dc5e65af
+		summarizeBy: none
+		sourceColumn: Customer
+
+		annotation SummarizationSetBy = Automatic
+
+	column City
+		dataType: string
+		lineageTag: 1e65e42a-2b38-406c-8a39-c7177c894096
+		summarizeBy: none
+		sourceColumn: City
+		dataCategory: City
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: ec85d035-2ddc-45e0-a3da-c83bf0b604e6
+		summarizeBy: none
+		sourceColumn: Country
+		dataCategory: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimCustomer = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Customers = Source{[Schema="dbo",Item="Customers"]}[Data],
+				    Selected = Table.SelectColumns(Customers, {"CustomerID", "CompanyName", "City", "Country"}),
+				    Renamed = Table.RenameColumns(Selected, {{"CompanyName", "Customer"}}),
+				    Typed = Table.TransformColumnTypes(Renamed, {{"CustomerID", type text}, {"Customer", type text}, {"City", type text}, {"Country", type text}})
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

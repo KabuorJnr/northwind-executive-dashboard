@@ -1,0 +1,140 @@
+table FactSales
+	lineageTag: 5816b4d3-c5f1-4c51-92df-2c35b4b80397
+
+	column OrderID
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 1935beaa-335d-40ce-b0bb-962bc20887da
+		summarizeBy: none
+		sourceColumn: OrderID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductID
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: bfe3801b-1be0-450b-ba00-ad6c761efa9d
+		summarizeBy: none
+		sourceColumn: ProductID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerID
+		dataType: string
+		isHidden
+		lineageTag: b761f908-db99-49c9-bb9d-9a89a8fa65c3
+		summarizeBy: none
+		sourceColumn: CustomerID
+
+		annotation SummarizationSetBy = Automatic
+
+	column EmployeeID
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 9c65621c-8f62-4547-b175-9879b33a679d
+		summarizeBy: none
+		sourceColumn: EmployeeID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShipVia
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: d850f28d-1c36-47e4-8164-8b55da160792
+		summarizeBy: none
+		sourceColumn: ShipVia
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDate
+		dataType: dateTime
+		formatString: d mmm yyyy
+		isHidden
+		lineageTag: 93d669a4-e5f6-43b2-a9b4-61a328466c9b
+		summarizeBy: none
+		sourceColumn: OrderDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column UnitPrice
+		dataType: decimal
+		formatString: \$#,0.00
+		isHidden
+		lineageTag: 308abe96-d16f-402e-b1f7-cfb4d89d7eff
+		summarizeBy: none
+		sourceColumn: UnitPrice
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quantity
+		dataType: int64
+		formatString: #,0
+		isHidden
+		lineageTag: bdfc442e-b370-4bf8-a3df-fca9cf45056b
+		summarizeBy: none
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column Discount
+		dataType: double
+		formatString: 0%
+		isHidden
+		lineageTag: b7f868b7-f7e3-49bd-b738-7d99d0a01840
+		summarizeBy: none
+		sourceColumn: Discount
+
+		annotation SummarizationSetBy = Automatic
+
+	column GrossAmount
+		dataType: decimal
+		formatString: \$#,0
+		isHidden
+		lineageTag: 447ad9eb-8a53-4775-b082-0f3b9ba5a33c
+		summarizeBy: none
+		sourceColumn: GrossAmount
+
+		annotation SummarizationSetBy = Automatic
+
+	column NetRevenue
+		dataType: decimal
+		formatString: \$#,0
+		isHidden
+		lineageTag: 01cc94af-c64c-439e-b141-40bb88505b95
+		summarizeBy: none
+		sourceColumn: NetRevenue
+
+		annotation SummarizationSetBy = Automatic
+
+	column DiscountAmount
+		dataType: decimal
+		formatString: \$#,0
+		isHidden
+		lineageTag: 1a9a2285-f25c-460e-8c48-adc00661d7ff
+		summarizeBy: none
+		sourceColumn: DiscountAmount
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactSales = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Details = Source{[Schema="dbo",Item="Order Details"]}[Data],
+				    Orders = Source{[Schema="dbo",Item="Orders"]}[Data],
+				    Joined = Table.NestedJoin(Details, {"OrderID"}, Orders, {"OrderID"}, "O", JoinKind.Inner),
+				    Expanded = Table.ExpandTableColumn(Joined, "O", {"CustomerID", "EmployeeID", "ShipVia", "OrderDate"}),
+				    Selected = Table.SelectColumns(Expanded, {"OrderID", "ProductID", "CustomerID", "EmployeeID", "ShipVia", "OrderDate", "UnitPrice", "Quantity", "Discount"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"OrderID", Int64.Type}, {"ProductID", Int64.Type}, {"CustomerID", type text}, {"EmployeeID", Int64.Type}, {"ShipVia", Int64.Type}, {"OrderDate", type date}, {"UnitPrice", Currency.Type}, {"Quantity", Int64.Type}, {"Discount", type number}}),
+				    AddGross = Table.AddColumn(Typed, "GrossAmount", each [UnitPrice] * [Quantity], Currency.Type),
+				    AddNet = Table.AddColumn(AddGross, "NetRevenue", each [UnitPrice] * [Quantity] * (1 - [Discount]), Currency.Type),
+				    AddDiscount = Table.AddColumn(AddNet, "DiscountAmount", each [GrossAmount] - [NetRevenue], Currency.Type)
+				in
+				    AddDiscount
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,139 @@
+table FactOrders
+	lineageTag: 4f767b98-02ba-4a0b-8c7e-eee18e085484
+
+	column OrderID
+		dataType: int64
+		formatString: 0
+		lineageTag: 4620e274-879f-4172-8ba0-cb53e4a94e69
+		summarizeBy: none
+		sourceColumn: OrderID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerID
+		dataType: string
+		isHidden
+		lineageTag: 8652e03b-f3da-4b6b-ac93-0e754fdce9d0
+		summarizeBy: none
+		sourceColumn: CustomerID
+
+		annotation SummarizationSetBy = Automatic
+
+	column EmployeeID
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 98199256-7612-4814-afaa-7ca96b079822
+		summarizeBy: none
+		sourceColumn: EmployeeID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShipVia
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: a05e269e-a4e2-4088-af29-a6e4d1b56ff3
+		summarizeBy: none
+		sourceColumn: ShipVia
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDate
+		dataType: dateTime
+		formatString: d mmm yyyy
+		lineageTag: c02c563a-04ac-46eb-a4ff-46446d9c7afc
+		summarizeBy: none
+		sourceColumn: OrderDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column RequiredDate
+		dataType: dateTime
+		formatString: d mmm yyyy
+		lineageTag: 248388c8-b82f-41b9-8488-6e31686e7e41
+		summarizeBy: none
+		sourceColumn: RequiredDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShippedDate
+		dataType: dateTime
+		formatString: d mmm yyyy
+		lineageTag: 6d5829a8-da00-4a6a-a3ad-bd374840ee66
+		summarizeBy: none
+		sourceColumn: ShippedDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column Freight
+		dataType: decimal
+		formatString: \$#,0.00
+		isHidden
+		lineageTag: c5a1d797-04d6-4a05-b668-6b3cafe2f9a6
+		summarizeBy: none
+		sourceColumn: Freight
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShipCity
+		dataType: string
+		lineageTag: 216a0668-2f81-413a-a206-77833f2c5f9a
+		summarizeBy: none
+		sourceColumn: ShipCity
+		dataCategory: City
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShipCountry
+		dataType: string
+		lineageTag: 072a224e-e277-4e99-9d98-b49d547adb3b
+		summarizeBy: none
+		sourceColumn: ShipCountry
+		dataCategory: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column DaysToShip
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 7e74ea54-f2e9-4e72-afe0-016dfa5feb5e
+		summarizeBy: none
+		sourceColumn: DaysToShip
+
+		annotation SummarizationSetBy = Automatic
+
+	column DaysLate
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 6f727a2d-1bed-4066-911f-e73f8d13a604
+		summarizeBy: none
+		sourceColumn: DaysLate
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Delivery Status'
+		dataType: string
+		lineageTag: cc9c9b77-842a-4822-b3fb-bb19f8914909
+		summarizeBy: none
+		sourceColumn: Delivery Status
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactOrders = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Orders = Source{[Schema="dbo",Item="Orders"]}[Data],
+				    Selected = Table.SelectColumns(Orders, {"OrderID", "CustomerID", "EmployeeID", "ShipVia", "OrderDate", "RequiredDate", "ShippedDate", "Freight", "ShipCity", "ShipCountry"}),
+				    Typed = Table.TransformColumnTypes(Selected, {{"OrderID", Int64.Type}, {"CustomerID", type text}, {"EmployeeID", Int64.Type}, {"ShipVia", Int64.Type}, {"OrderDate", type date}, {"RequiredDate", type date}, {"ShippedDate", type date}, {"Freight", Currency.Type}, {"ShipCity", type text}, {"ShipCountry", type text}}),
+				    AddDaysToShip = Table.AddColumn(Typed, "DaysToShip", each if [ShippedDate] = null then null else Duration.Days([ShippedDate] - [OrderDate]), Int64.Type),
+				    AddDaysLate = Table.AddColumn(AddDaysToShip, "DaysLate", each if [ShippedDate] = null then null else Duration.Days([ShippedDate] - [RequiredDate]), Int64.Type),
+				    AddStatus = Table.AddColumn(AddDaysLate, "Delivery Status", each if [ShippedDate] = null then "Open" else if [ShippedDate] <= [RequiredDate] then "On time" else "Late", type text)
+				in
+				    AddStatus
+
+	annotation PBI_ResultType = Table
